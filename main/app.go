@@ -2,11 +2,12 @@ package main
 
 import (
 	"enigmacamp.com/gosql/config"
+	"enigmacamp.com/gosql/logger"
+	"enigmacamp.com/gosql/manager"
+	"enigmacamp.com/gosql/models"
 	"enigmacamp.com/gosql/repositories"
-	"enigmacamp.com/gosql/usecases"
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"log"
 )
 
 /*
@@ -22,8 +23,9 @@ var (
 )
 
 type app struct {
-	sf              *repositories.DbSessionFactory
-	customerUseCase usecases.ICustomerUseCase
+	sf             *repositories.DbSessionFactory
+	serviceManager manager.ServiceManager
+	config         *config.Config
 }
 
 func newApp() app {
@@ -31,22 +33,40 @@ func newApp() app {
 	c := config.NewConfig(*appEnvironment)
 	err := c.InitDb()
 	if err != nil {
+		logger.Logger.Fatal().Err(err)
 		panic(err)
 	}
 	myapp := app{
-		sf:              c.SessionFactory,
-		customerUseCase: usecases.NewCustomerUseCase(c.SessionFactory),
+		sf:             c.SessionFactory,
+		serviceManager: manager.NewServiceManger(c.SessionFactory),
+		config:         c,
 	}
 	return myapp
 }
 func (a app) run() {
-	totalCustomer, err := a.customerUseCase.GetTotalCustomer()
-	log.Printf("Total Customer : %v \n", totalCustomer)
-	customers, err := a.customerUseCase.FindCustomerByFirstName("ka")
-	log.Printf("Customer : %v \n", customers)
+	logger.Logger.Info().Msg("Application is running")
+	bulkCustomers, err := a.serviceManager.CustomerUseCase().RegisterBulkCustomer([]models.Customer{
+		{
+			FirstName: "Alias",
+			LastName:  "Rizal",
+			Address:   "Pondok Kelapa",
+			City:      "Jakarta",
+		},
+		{
+			FirstName: "Agus",
+			LastName:  "Riyan",
+			Address:   "Mangga Lima",
+			City:      "Jakarta",
+		},
+	})
+	logger.Logger.Info().Msgf("New Customers : %v \n", bulkCustomers)
 
+	totalCustomer, err := a.serviceManager.CustomerUseCase().GetTotalCustomer()
+	logger.Logger.Info().Msgf("Total Customer : %v \n", totalCustomer)
+	customers, err := a.serviceManager.CustomerUseCase().FindCustomerByFirstName("ka")
+	logger.Logger.Info().Msgf("Customer : %v \n", customers)
 	if err != nil {
-		log.Println(err)
+		logger.Logger.Error().Err(err)
 	}
 }
 func main() {

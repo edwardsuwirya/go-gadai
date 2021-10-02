@@ -10,16 +10,16 @@ type ICustomerUseCase interface {
 	FindCustomerByFirstName(name string) ([]models.Customer, error)
 	GetTotalCustomer() (int, error)
 	RegisterNewCustomer(customer models.Customer) (*models.Customer, error)
-	RegisterBulkCustomer(customer []models.Customer) error
+	RegisterBulkCustomer(customer []models.Customer) ([]*models.Customer, error)
 }
 
 type CustomerUseCase struct {
 	repo repo.ICustomerRepository
 }
 
-func NewCustomerUseCase(sf *repositories.DbSessionFactory) ICustomerUseCase {
+func NewCustomerUseCase(customerRepo repositories.ICustomerRepository) ICustomerUseCase {
 	return &CustomerUseCase{
-		repo: repo.NewCustomerRepository(sf),
+		repo: customerRepo,
 	}
 }
 
@@ -35,6 +35,6 @@ func (c *CustomerUseCase) RegisterNewCustomer(customer models.Customer) (*models
 	panic("implement me")
 }
 
-func (c *CustomerUseCase) RegisterBulkCustomer(customer []models.Customer) error {
-	panic("implement me")
+func (c *CustomerUseCase) RegisterBulkCustomer(newCustomers []models.Customer) ([]*models.Customer, error) {
+	return c.repo.InsertBulk(newCustomers)
 }

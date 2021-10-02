@@ -1,10 +1,13 @@
 package config
 
 import (
+	appLog "enigmacamp.com/gosql/logger"
 	repo "enigmacamp.com/gosql/repositories"
 	"fmt"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"log"
+	"os"
 )
 
 type dbConf struct {
@@ -28,8 +31,16 @@ func NewConfig(env string) *Config {
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatalln("Can not read config")
+		log.Fatal().Err(err).Msg("Can not read config")
 	}
+
+	outputWriter := os.Stdout
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	if env == "dev" {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+	logger := zerolog.New(outputWriter).With().Logger()
 	c := new(Config)
 	c.dbConf = &dbConf{
 		dbUser:     c.GetEnv("dbuser", "root"),
@@ -39,11 +50,12 @@ func NewConfig(env string) *Config {
 		schema:     c.GetEnv("dbschema", "enigma"),
 		dbEngine:   c.GetEnv("dbengine", "mysql"),
 	}
+	appLog.Logger = logger
 	return c
 }
 
 func (c *Config) InitDb() error {
-	log.Println("======= Create DB Connection =======")
+	appLog.Logger.Debug().Msg("======= Create DB Connection =======")
 	sf := repo.NewDbSessionFactory(c.dbConf.dbEngine, fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", c.dbConf.dbUser, c.dbConf.dbPassword, c.dbConf.dbHost, c.dbConf.dbPort, c.dbConf.schema))
 	c.SessionFactory = sf
 	return nil
