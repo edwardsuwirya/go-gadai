@@ -4,6 +4,7 @@ import (
 	appLog "enigmacamp.com/gosql/logger"
 	repo "enigmacamp.com/gosql/repositories"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -19,9 +20,15 @@ type dbConf struct {
 	dbEngine   string
 }
 
+type HttpConf struct {
+	Host string
+	Port string
+}
+
 type Config struct {
 	SessionFactory *repo.DbSessionFactory
 	dbConf         *dbConf
+	HttpConf       *HttpConf
 }
 
 func NewConfig(env string) *Config {
@@ -41,6 +48,12 @@ func NewConfig(env string) *Config {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 	logger := zerolog.New(outputWriter).With().Logger()
+
+	if env != "prod" {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	c := new(Config)
 	c.dbConf = &dbConf{
 		dbUser:     c.GetEnv("dbuser", "root"),
@@ -49,6 +62,10 @@ func NewConfig(env string) *Config {
 		dbPort:     c.GetEnv("dbport", "3306"),
 		schema:     c.GetEnv("dbschema", "enigma"),
 		dbEngine:   c.GetEnv("dbengine", "mysql"),
+	}
+	c.HttpConf = &HttpConf{
+		Host: c.GetEnv("httphost", "localhost"),
+		Port: c.GetEnv("httpport", "8080"),
 	}
 	appLog.Logger = logger
 	return c
