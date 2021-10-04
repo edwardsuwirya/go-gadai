@@ -5,8 +5,6 @@ import (
 	"enigmacamp.com/gosql/deliveries"
 	"enigmacamp.com/gosql/logger"
 	"enigmacamp.com/gosql/manager"
-	"enigmacamp.com/gosql/repositories"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -30,9 +28,9 @@ var (
 )
 
 type app struct {
-	sf             *repositories.DbSessionFactory
 	serviceManager manager.ServiceManager
-	config         *config.Config
+	router         *gin.Engine
+	httpListen     string
 }
 
 func newApp() app {
@@ -43,20 +41,19 @@ func newApp() app {
 		logger.Logger.Fatal().Msg(err.Error())
 		panic(err)
 	}
+	c.InitRouter()
 	myapp := app{
-		sf:             c.SessionFactory,
 		serviceManager: manager.NewServiceManger(c.SessionFactory),
-		config:         c,
+		router:         c.Router,
+		httpListen:     c.HttpConf.HttpServe,
 	}
 	return myapp
 }
 func (a app) run() {
-	appRouter := gin.Default()
-	deliveries.NewAppDelivery(appRouter, a.serviceManager).Initialize()
-	hostListen := fmt.Sprintf("%v:%v", a.config.HttpConf.Host, a.config.HttpConf.Port)
-	logger.Logger.Info().Msgf("Ready to listen on %v", hostListen)
+	deliveries.NewAppDelivery(a.router, a.serviceManager).Initialize()
+	logger.Logger.Info().Msgf("Ready to listen on %v", a.httpListen)
 
-	if err := http.ListenAndServe(hostListen, appRouter); err != nil {
+	if err := http.ListenAndServe(a.httpListen, a.router); err != nil {
 		logger.Logger.Fatal().Msg(err.Error())
 	}
 

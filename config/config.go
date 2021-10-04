@@ -21,14 +21,14 @@ type dbConf struct {
 }
 
 type HttpConf struct {
-	Host string
-	Port string
+	HttpServe string
 }
 
 type Config struct {
 	SessionFactory *repo.DbSessionFactory
 	dbConf         *dbConf
 	HttpConf       *HttpConf
+	Router         *gin.Engine
 }
 
 func NewConfig(env string) *Config {
@@ -63,9 +63,10 @@ func NewConfig(env string) *Config {
 		schema:     c.GetEnv("dbschema", "enigma"),
 		dbEngine:   c.GetEnv("dbengine", "mysql"),
 	}
+	host := c.GetEnv("httphost", "localhost")
+	port := c.GetEnv("httpport", "8080")
 	c.HttpConf = &HttpConf{
-		Host: c.GetEnv("httphost", "localhost"),
-		Port: c.GetEnv("httpport", "8080"),
+		HttpServe: fmt.Sprintf("%v:%v", host, port),
 	}
 	appLog.Logger = logger
 	return c
@@ -76,6 +77,12 @@ func (c *Config) InitDb() error {
 	sf := repo.NewDbSessionFactory(c.dbConf.dbEngine, fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", c.dbConf.dbUser, c.dbConf.dbPassword, c.dbConf.dbHost, c.dbConf.dbPort, c.dbConf.schema))
 	c.SessionFactory = sf
 	return nil
+}
+
+func (c *Config) InitRouter() {
+	appLog.Logger.Debug().Msg("======= Create Http Router =======")
+	appRouter := gin.Default()
+	c.Router = appRouter
 }
 
 func (c *Config) GetEnv(key, defaultValue string) string {
