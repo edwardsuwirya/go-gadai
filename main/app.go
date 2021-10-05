@@ -43,7 +43,7 @@ func newApp() app {
 	}
 	c.InitRouter()
 	myapp := app{
-		serviceManager: manager.NewServiceManger(c.SessionFactory),
+		serviceManager: manager.NewServiceManger(c.SessionFactory, c.HttpConf.UploadFilePath),
 		router:         c.Router,
 		httpListen:     c.HttpConf.HttpServe,
 	}

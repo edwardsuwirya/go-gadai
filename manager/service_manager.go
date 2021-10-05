@@ -14,9 +14,9 @@ type serviceManager struct {
 }
 
 func (sm *serviceManager) CustomerUseCase() usecases.ICustomerUseCase {
-	return usecases.NewCustomerUseCase(sm.repo.CustomerRepo())
+	return usecases.NewCustomerUseCase(sm.repo.CustomerRepo(), sm.repo.FileRepo())
 }
 
-func NewServiceManger(sf *repositories.DbSessionFactory) ServiceManager {
-	return &serviceManager{repo: NewRepoManager(sf)}
+func NewServiceManger(sf *repositories.DbSessionFactory, filePath string) ServiceManager {
+	return &serviceManager{repo: NewRepoManager(sf, filePath)}
 }

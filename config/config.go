@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"os"
+	"strconv"
 )
 
 type dbConf struct {
@@ -21,7 +22,9 @@ type dbConf struct {
 }
 
 type HttpConf struct {
-	HttpServe string
+	HttpServe      string
+	maxFileSize    int64
+	UploadFilePath string
 }
 
 type Config struct {
@@ -65,8 +68,12 @@ func NewConfig(env string) *Config {
 	}
 	host := c.GetEnv("httphost", "localhost")
 	port := c.GetEnv("httpport", "8080")
+	fileSize, _ := strconv.ParseInt(c.GetEnv("maxfilesize", "1"), 10, 64)
+	uploadFilePath := c.GetEnv("filePath", "public")
 	c.HttpConf = &HttpConf{
-		HttpServe: fmt.Sprintf("%v:%v", host, port),
+		HttpServe:      fmt.Sprintf("%v:%v", host, port),
+		maxFileSize:    fileSize,
+		UploadFilePath: uploadFilePath,
 	}
 	appLog.Logger = logger
 	return c
@@ -82,6 +89,8 @@ func (c *Config) InitDb() error {
 func (c *Config) InitRouter() {
 	appLog.Logger.Debug().Msg("======= Create Http Router =======")
 	appRouter := gin.Default()
+	// "8 times 2, 30 times" = 8388608 byte
+	appRouter.MaxMultipartMemory = c.HttpConf.maxFileSize << 20
 	c.Router = appRouter
 }
 
@@ -91,3 +100,6 @@ func (c *Config) GetEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
+
+//pak evan aca
+//02131999100
