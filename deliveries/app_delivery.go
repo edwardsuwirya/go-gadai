@@ -7,6 +7,7 @@ import (
 
 const (
 	CustomerMainRoute = "/customer"
+	AuthMainRoute     = "/auth"
 )
 
 type IAppRouter interface {
@@ -24,6 +25,7 @@ func NewAppDelivery(rt *gin.Engine, sm manager.ServiceManager) *AppDelivery {
 func (a *AppDelivery) Initialize() {
 	routerList := []IAppRouter{
 		NewCustomerRoute(CustomerMainRoute, a.sm, a.rt),
+		NewAuthRoute(AuthMainRoute, a.rt),
 	}
 	for _, rt := range routerList {
 		rt.InitRoute()

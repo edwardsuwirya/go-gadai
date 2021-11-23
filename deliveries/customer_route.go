@@ -18,7 +18,8 @@ type CustomerRoute struct {
 
 func (cr *CustomerRoute) InitRoute() {
 	vCustomer := cr.rt.Group(cr.prefix)
-	vCustomer.Use(authMiddleware())
+	//vCustomer.Use(authMiddleware())
+	vCustomer.Use(authCookieMiddleware())
 	vCustomer.GET("/total", cr.getTotalCustomer)
 	vCustomer.GET("", cr.findCustomer)
 	vCustomer.POST("", cr.registerCustomer)
